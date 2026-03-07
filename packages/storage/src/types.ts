@@ -129,4 +129,138 @@ export interface StorageConfig {
    * Default: '/uploads'
    */
   localBaseUrl?: string;
+
+  /**
+   * Logger for observability. If not provided, no logging occurs.
+   */
+  logger?: StorageLogger;
+}
+
+// ── Observability Types ────────────────────────────────────────────
+
+/**
+ * Error codes for categorizing storage failures.
+ * Helps consumers decide whether to retry or surface error to user.
+ */
+export type StorageErrorCode =
+  | 'NETWORK_ERROR'       // Transient network failure - retryable
+  | 'QUOTA_EXCEEDED'      // Storage quota exceeded - not retryable
+  | 'INVALID_CREDENTIALS' // Auth failure - not retryable without config change
+  | 'NOT_FOUND'           // Blob doesn't exist - not retryable
+  | 'INVALID_INPUT'       // Bad file/options - not retryable
+  | 'PROVIDER_ERROR'      // Provider-specific error - check cause
+  | 'UNKNOWN';            // Unrecognized error
+
+/**
+ * Typed storage error with categorization for consumer handling.
+ */
+export class StorageError extends Error {
+  /** Machine-readable error code */
+  readonly code: StorageErrorCode;
+
+  /** Whether this error is likely transient and worth retrying */
+  readonly retryable: boolean;
+
+  /** Original error from provider */
+  readonly cause: Error | undefined;
+
+  /** Provider that threw the error */
+  readonly provider: string;
+
+  constructor(
+    message: string,
+    code: StorageErrorCode,
+    provider: string,
+    cause?: Error
+  ) {
+    super(message);
+    this.name = 'StorageError';
+    this.code = code;
+    this.provider = provider;
+    this.cause = cause;
+    this.retryable = code === 'NETWORK_ERROR';
+  }
+}
+
+/**
+ * Log event data for storage operations.
+ */
+export interface StorageLogEvent {
+  /** Operation name: 'upload', 'delete', 'getUrl' */
+  operation: 'upload' | 'delete' | 'getUrl';
+
+  /** Storage provider name */
+  provider: string;
+
+  /** Correlation ID for request tracing (if provided) */
+  correlationId?: string;
+
+  /** Operation duration in milliseconds (for success/error events) */
+  durationMs?: number;
+
+  /** Blob ID (for delete/getUrl operations) */
+  blobId?: string;
+
+  /** Upload details (for upload operations) */
+  upload?: {
+    pathname?: string;
+    size: number;
+    contentType?: string;
+    access: 'public' | 'private';
+  };
+
+  /** Result details (for success events) */
+  result?: {
+    blobId: string;
+    pathname: string;
+  };
+
+  /** Error details (for error events) */
+  error?: {
+    code: StorageErrorCode;
+    message: string;
+    retryable: boolean;
+  };
+}
+
+/**
+ * Logger interface for storage observability.
+ * Consumers inject their own logger implementation.
+ */
+export interface StorageLogger {
+  /**
+   * Log successful operation or informational event.
+   */
+  info(event: string, data: StorageLogEvent): void;
+
+  /**
+   * Log operation failure.
+   */
+  error(event: string, data: StorageLogEvent): void;
+
+  /**
+   * Log debug information (verbose, may be disabled in production).
+   */
+  debug?(event: string, data: StorageLogEvent): void;
+}
+
+/**
+ * Extended upload options with observability support.
+ */
+export interface UploadOptionsWithContext extends UploadOptions {
+  /**
+   * Correlation ID for request tracing.
+   * Typically passed from incoming request headers (e.g., x-request-id).
+   */
+  correlationId?: string;
+}
+
+/**
+ * Extended delete options with observability support.
+ */
+export interface DeleteOptions {
+  /**
+   * Correlation ID for request tracing.
+   */
+  correlationId?: string;
 }

@@ -26,16 +26,25 @@ export type {
   UploadOptions,
   GetUrlOptions,
   StorageConfig,
+  // Observability types
+  StorageLogger,
+  StorageLogEvent,
+  StorageErrorCode,
+  UploadOptionsWithContext,
+  DeleteOptions,
 } from './types.js';
 
+export { StorageError } from './types.js';
 export { VercelBlobProvider } from './providers/vercel-blob.js';
 export { LocalFSProvider, type LocalFSProviderConfig } from './providers/local.js';
 export { R2Provider } from './providers/r2.js';
+export { ObservableStorageService } from './observable.js';
 
 import type { StorageService, StorageConfig } from './types.js';
 import { VercelBlobProvider } from './providers/vercel-blob.js';
 import { LocalFSProvider } from './providers/local.js';
 import { R2Provider } from './providers/r2.js';
+import { wrapWithObservability } from './observable.js';
 
 /**
  * Create a storage service based on configuration or environment.
@@ -63,29 +72,45 @@ import { R2Provider } from './providers/r2.js';
  *   localDir: './uploads',
  *   localBaseUrl: '/api/files',
  * });
+ *
+ * @example
+ * // With observability logging
+ * const storage = createStorageService({
+ *   logger: {
+ *     info: (event, data) => console.log(`[storage] ${event}`, data),
+ *     error: (event, data) => console.error(`[storage] ${event}`, data),
+ *   },
+ * });
  */
 export function createStorageService(config: StorageConfig = {}): StorageService {
-  const provider = resolveProvider(config);
+  const providerName = resolveProvider(config);
+  let service: StorageService;
 
-  switch (provider) {
+  switch (providerName) {
     case 'vercel':
-      return new VercelBlobProvider();
+      service = new VercelBlobProvider();
+      break;
 
     case 'local':
-      return new LocalFSProvider({
+      service = new LocalFSProvider({
         directory: config.localDir,
         baseUrl: config.localBaseUrl,
       });
+      break;
 
     case 'r2':
-      return new R2Provider();
+      service = new R2Provider();
+      break;
 
     default:
       throw new Error(
-        `Unknown storage provider: "${provider}". ` +
+        `Unknown storage provider: "${providerName}". ` +
           'Valid options: vercel, local, r2'
       );
   }
+
+  // Wrap with observability if a logger is provided
+  return wrapWithObservability(service, config.logger);
 }
 
 /**

@@ -18,7 +18,10 @@ import {
   isLegacyUrl,
   legacyVercelUrlToId,
   LocalFSProvider,
+  ObservableStorageService,
+  StorageError,
 } from '../index.js';
+import type { StorageService, StorageLogger, StorageLogEvent } from '../index.js';
 
 // Test directory for LocalFSProvider
 const testDir = join(tmpdir(), `launchkit-storage-test-${randomBytes(4).toString('hex')}`);
@@ -334,5 +337,267 @@ describe('R2Provider', () => {
     await expect(storage.delete('r2:bucket/key')).rejects.toThrow(
       'R2Provider.delete() is not implemented'
     );
+  });
+});
+
+describe('ObservableStorageService', () => {
+  let mockLogger: StorageLogger;
+  let infoLogs: Array<{ event: string; data: StorageLogEvent }>;
+  let errorLogs: Array<{ event: string; data: StorageLogEvent }>;
+  let debugLogs: Array<{ event: string; data: StorageLogEvent }>;
+
+  beforeEach(() => {
+    infoLogs = [];
+    errorLogs = [];
+    debugLogs = [];
+    mockLogger = {
+      info: (event, data) => infoLogs.push({ event, data }),
+      error: (event, data) => errorLogs.push({ event, data }),
+      debug: (event, data) => debugLogs.push({ event, data }),
+    };
+  });
+
+  describe('upload', () => {
+    it('logs successful uploads with duration', async () => {
+      const innerStorage = new LocalFSProvider({
+        directory: testDir,
+        baseUrl: '/uploads',
+      });
+      const storage = new ObservableStorageService(innerStorage, mockLogger);
+
+      await mkdir(testDir, { recursive: true });
+      const content = Buffer.from('test content');
+      const result = await storage.upload(content, {
+        access: 'public',
+        contentType: 'text/plain',
+      });
+      await rm(testDir, { recursive: true, force: true });
+
+      // Should have debug start and info success
+      expect(debugLogs).toHaveLength(1);
+      expect(debugLogs[0].event).toBe('storage.upload.start');
+      expect(debugLogs[0].data.operation).toBe('upload');
+      expect(debugLogs[0].data.provider).toBe('local');
+      expect(debugLogs[0].data.upload?.size).toBe(content.length);
+
+      expect(infoLogs).toHaveLength(1);
+      expect(infoLogs[0].event).toBe('storage.upload.success');
+      expect(infoLogs[0].data.durationMs).toBeGreaterThanOrEqual(0);
+      expect(infoLogs[0].data.result?.blobId).toBe(result.id);
+    });
+
+    it('logs upload errors with categorized error code', async () => {
+      // Create a mock storage that throws
+      const failingStorage: StorageService = {
+        provider: 'mock',
+        upload: () => Promise.reject(new Error('ECONNREFUSED - Connection refused')),
+        getUrl: () => '',
+        delete: () => Promise.resolve(),
+      };
+      const storage = new ObservableStorageService(failingStorage, mockLogger);
+
+      await expect(
+        storage.upload(Buffer.from('test'), { access: 'public' })
+      ).rejects.toThrow(StorageError);
+
+      expect(errorLogs).toHaveLength(1);
+      expect(errorLogs[0].event).toBe('storage.upload.error');
+      expect(errorLogs[0].data.error?.code).toBe('NETWORK_ERROR');
+      expect(errorLogs[0].data.error?.retryable).toBe(true);
+    });
+
+    it('passes correlationId through to logs', async () => {
+      const innerStorage = new LocalFSProvider({
+        directory: testDir,
+        baseUrl: '/uploads',
+      });
+      const storage = new ObservableStorageService(innerStorage, mockLogger);
+
+      await mkdir(testDir, { recursive: true });
+      await storage.upload(Buffer.from('test'), {
+        access: 'public',
+        contentType: 'text/plain',
+        correlationId: 'req-123',
+      });
+      await rm(testDir, { recursive: true, force: true });
+
+      expect(infoLogs[0].data.correlationId).toBe('req-123');
+    });
+  });
+
+  describe('delete', () => {
+    it('logs successful deletes with duration', async () => {
+      const innerStorage = new LocalFSProvider({
+        directory: testDir,
+        baseUrl: '/uploads',
+      });
+      const storage = new ObservableStorageService(innerStorage, mockLogger);
+
+      await mkdir(testDir, { recursive: true });
+      const result = await innerStorage.upload(Buffer.from('test'), {
+        access: 'public',
+        contentType: 'text/plain',
+      });
+
+      // Delete through observable wrapper
+      await storage.delete(result.id);
+      await rm(testDir, { recursive: true, force: true });
+
+      expect(debugLogs[0].event).toBe('storage.delete.start');
+      expect(infoLogs[0].event).toBe('storage.delete.success');
+      expect(infoLogs[0].data.blobId).toBe(result.id);
+      expect(infoLogs[0].data.durationMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it('logs delete errors', async () => {
+      const failingStorage: StorageService = {
+        provider: 'mock',
+        upload: () => Promise.reject(new Error('not implemented')),
+        getUrl: () => '',
+        delete: () => Promise.reject(new Error('404 - Not found')),
+      };
+      const storage = new ObservableStorageService(failingStorage, mockLogger);
+
+      await expect(storage.delete('test-id')).rejects.toThrow(StorageError);
+
+      expect(errorLogs[0].event).toBe('storage.delete.error');
+      expect(errorLogs[0].data.error?.code).toBe('NOT_FOUND');
+    });
+  });
+
+  describe('getUrl', () => {
+    it('logs at debug level', async () => {
+      const innerStorage = new LocalFSProvider({
+        directory: testDir,
+        baseUrl: '/uploads',
+      });
+      const storage = new ObservableStorageService(innerStorage, mockLogger);
+
+      storage.getUrl('local:test.txt');
+
+      expect(debugLogs).toHaveLength(1);
+      expect(debugLogs[0].event).toBe('storage.getUrl');
+      expect(debugLogs[0].data.blobId).toBe('local:test.txt');
+    });
+  });
+
+  describe('error categorization', () => {
+    it('categorizes credential errors', async () => {
+      const failingStorage: StorageService = {
+        provider: 'mock',
+        upload: () => Promise.reject(new Error('401 Unauthorized')),
+        getUrl: () => '',
+        delete: () => Promise.resolve(),
+      };
+      const storage = new ObservableStorageService(failingStorage, mockLogger);
+
+      await expect(
+        storage.upload(Buffer.from('test'), { access: 'public' })
+      ).rejects.toThrow(StorageError);
+
+      expect(errorLogs[0].data.error?.code).toBe('INVALID_CREDENTIALS');
+      expect(errorLogs[0].data.error?.retryable).toBe(false);
+    });
+
+    it('categorizes quota errors', async () => {
+      const failingStorage: StorageService = {
+        provider: 'mock',
+        upload: () => Promise.reject(new Error('413 Payload Too Large')),
+        getUrl: () => '',
+        delete: () => Promise.resolve(),
+      };
+      const storage = new ObservableStorageService(failingStorage, mockLogger);
+
+      await expect(
+        storage.upload(Buffer.from('test'), { access: 'public' })
+      ).rejects.toThrow(StorageError);
+
+      expect(errorLogs[0].data.error?.code).toBe('QUOTA_EXCEEDED');
+    });
+
+    it('categorizes unknown errors', async () => {
+      const failingStorage: StorageService = {
+        provider: 'mock',
+        upload: () => Promise.reject(new Error('Something weird happened')),
+        getUrl: () => '',
+        delete: () => Promise.resolve(),
+      };
+      const storage = new ObservableStorageService(failingStorage, mockLogger);
+
+      await expect(
+        storage.upload(Buffer.from('test'), { access: 'public' })
+      ).rejects.toThrow(StorageError);
+
+      expect(errorLogs[0].data.error?.code).toBe('UNKNOWN');
+    });
+  });
+});
+
+describe('StorageError', () => {
+  it('has correct properties', () => {
+    const cause = new Error('original error');
+    const error = new StorageError(
+      'Network failed',
+      'NETWORK_ERROR',
+      'vercel',
+      cause
+    );
+
+    expect(error.name).toBe('StorageError');
+    expect(error.message).toBe('Network failed');
+    expect(error.code).toBe('NETWORK_ERROR');
+    expect(error.provider).toBe('vercel');
+    expect(error.cause).toBe(cause);
+    expect(error.retryable).toBe(true);
+  });
+
+  it('sets retryable=false for non-network errors', () => {
+    const error = new StorageError('Auth failed', 'INVALID_CREDENTIALS', 'vercel');
+    expect(error.retryable).toBe(false);
+  });
+});
+
+describe('createStorageService with logger', () => {
+  const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    delete process.env.STORAGE_PROVIDER;
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+  });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  it('wraps storage with observability when logger provided', async () => {
+    const logs: string[] = [];
+    const logger: StorageLogger = {
+      info: (event) => logs.push(event),
+      error: (event) => logs.push(event),
+      debug: (event) => logs.push(event),
+    };
+
+    const storage = createStorageService({
+      provider: 'local',
+      localDir: testDir,
+      localBaseUrl: '/uploads',
+      logger,
+    });
+
+    await mkdir(testDir, { recursive: true });
+    await storage.upload(Buffer.from('test'), {
+      access: 'public',
+      contentType: 'text/plain',
+    });
+    await rm(testDir, { recursive: true, force: true });
+
+    expect(logs).toContain('storage.upload.start');
+    expect(logs).toContain('storage.upload.success');
+  });
+
+  it('returns unwrapped storage when no logger', () => {
+    const storage = createStorageService({ provider: 'local' });
+    // Without logger, should still work but be the raw LocalFSProvider
+    expect(storage.provider).toBe('local');
   });
 });
