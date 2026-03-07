@@ -6,6 +6,7 @@ on:
     paths:
       - 'packages/**'
       - '.github/workflows/publish.yml'
+  workflow_dispatch:
 
 jobs:
   publish:
