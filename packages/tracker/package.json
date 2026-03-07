@@ -1,0 +1,38 @@
+{
+  "name": "@launchkit/tracker",
+  "version": "0.1.0",
+  "description": "MCP server for issue tracking with Linear backend",
+  "type": "module",
+  "main": "dist/tracker.js",
+  "types": "dist/tracker.d.ts",
+  "bin": {
+    "launchkit-tracker": "dist/tracker.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "dotenv": "^16.4.7",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fermi-ventures/launchkit.git",
+    "directory": "packages/tracker"
+  },
+  "license": "MIT"
+}

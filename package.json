@@ -1,38 +1,32 @@
 {
-  "name": "@fermi-ventures/launchkit",
-  "version": "0.1.0",
-  "description": "Shared tooling, MCP servers, and utilities for Fermi Ventures projects",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "bin": {
-    "launchkit-tracker": "dist/mcp-servers/tracker.js"
+  "name": "launchkit",
+  "private": true,
+  "description": "LaunchKit monorepo — @launchkit/* packages for Fermi Ventures",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fermi-ventures/launchkit.git"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "lint": "tsc --noEmit",
-    "prepare": "tsc",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0",
+    "turbo": "^2.4.0",
+    "typescript": "^5.7.0"
   },
   "engines": {
     "node": ">=20.0.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Fermi-Ventures/launchkit.git"
-  },
-  "license": "MIT",
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.26.0",
-    "@vercel/blob": "^2.3.1",
-    "dotenv": "^16.4.7",
-    "zod": "^3.23.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.7.0",
-    "vitest": "^4.0.18"
-  }
+  "packageManager": "npm@10.9.0"
 }

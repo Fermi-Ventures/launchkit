@@ -48,7 +48,7 @@ export function createLinearBackend(): TrackerBackend {
   }
 
   const require = createRequire(import.meta.url);
-  const linear = require('../../../lib/linear.cjs') as LinearLib;
+  const linear = require('../../lib/linear.cjs') as LinearLib;
 
   return {
     // ── Issues ────────────────────────────────────────────────
