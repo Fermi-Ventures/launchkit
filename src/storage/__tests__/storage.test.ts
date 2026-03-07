@@ -143,6 +143,18 @@ describe('LocalFSProvider', () => {
 
       expect(result.pathname).toMatch(/\.png$/);
     });
+
+    it('rejects path traversal attempts', async () => {
+      const content = Buffer.from('malicious');
+      await expect(
+        storage.upload(content, {
+          access: 'public',
+          pathname: '../../../etc/passwd',
+          contentType: 'text/plain',
+          addRandomSuffix: false,
+        })
+      ).rejects.toThrow('path traversal detected');
+    });
   });
 
   describe('getUrl', () => {
@@ -239,6 +251,54 @@ describe('legacyVercelUrlToId', () => {
 
   it('handles already-opaque IDs gracefully', () => {
     expect(legacyVercelUrlToId('vercel:existing')).toBe('vercel:existing');
+  });
+});
+
+describe('VercelBlobProvider', () => {
+  it('extracts pathname from opaque ID', async () => {
+    const { VercelBlobProvider } = await import('../providers/vercel-blob.js');
+    const storage = new VercelBlobProvider();
+
+    // Test getUrl with BLOB_STORE_ID set
+    const originalStoreId = process.env.BLOB_STORE_ID;
+    process.env.BLOB_STORE_ID = 'test-store';
+
+    const url = storage.getUrl('vercel:images/photo.png');
+    expect(url).toBe('https://test-store.public.blob.vercel-storage.com/images/photo.png');
+
+    process.env.BLOB_STORE_ID = originalStoreId;
+  });
+
+  it('handles raw pathname without prefix', async () => {
+    const { VercelBlobProvider } = await import('../providers/vercel-blob.js');
+    const storage = new VercelBlobProvider();
+
+    const originalStoreId = process.env.BLOB_STORE_ID;
+    process.env.BLOB_STORE_ID = 'test-store';
+
+    const url = storage.getUrl('raw-pathname.png');
+    expect(url).toBe('https://test-store.public.blob.vercel-storage.com/raw-pathname.png');
+
+    process.env.BLOB_STORE_ID = originalStoreId;
+  });
+
+  it('warns when no base URL available', async () => {
+    const { VercelBlobProvider } = await import('../providers/vercel-blob.js');
+    const storage = new VercelBlobProvider();
+
+    const originalStoreId = process.env.BLOB_STORE_ID;
+    delete process.env.BLOB_STORE_ID;
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const url = storage.getUrl('vercel:some/path.png');
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('No base URL available')
+    );
+    expect(url).toBe('some/path.png'); // Falls back to pathname
+
+    warnSpy.mockRestore();
+    process.env.BLOB_STORE_ID = originalStoreId;
   });
 });
 

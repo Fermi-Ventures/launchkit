@@ -94,8 +94,6 @@ export class VercelBlobProvider implements StorageService {
 
   async delete(blobId: string): Promise<void> {
     const { del } = await this.getBlobModule();
-    const pathname = this.extractPathname(blobId);
-
     // Vercel Blob delete requires the full URL
     const url = this.getUrl(blobId);
     await del(url);

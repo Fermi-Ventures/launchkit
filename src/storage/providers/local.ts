@@ -13,7 +13,7 @@
  */
 
 import { mkdir, writeFile, unlink } from 'fs/promises';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import { randomBytes } from 'crypto';
 import type {
   StorageService,
@@ -57,6 +57,13 @@ export class LocalFSProvider implements StorageService {
     const filename = this.generateFilename(options);
     const filepath = join(this.directory, filename);
 
+    // Security: prevent path traversal attacks
+    const resolvedPath = resolve(filepath);
+    const resolvedDir = resolve(this.directory);
+    if (!resolvedPath.startsWith(resolvedDir)) {
+      throw new Error('Invalid pathname: path traversal detected');
+    }
+
     // Ensure directory exists
     await mkdir(dirname(filepath), { recursive: true });
 
@@ -86,6 +93,13 @@ export class LocalFSProvider implements StorageService {
   async delete(blobId: string): Promise<void> {
     const filename = this.extractFilename(blobId);
     const filepath = join(this.directory, filename);
+
+    // Security: prevent path traversal attacks
+    const resolvedPath = resolve(filepath);
+    const resolvedDir = resolve(this.directory);
+    if (!resolvedPath.startsWith(resolvedDir)) {
+      throw new Error('Invalid pathname: path traversal detected');
+    }
 
     try {
       await unlink(filepath);
