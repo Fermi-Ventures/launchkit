@@ -119,6 +119,12 @@ export interface EnsureTeamWorkflowResult {
   labelsExisting: string[];
 }
 
+export interface CreateDocumentInput {
+  title: string;
+  content: string;
+  projectId?: string;
+}
+
 export interface TrackerBackend {
   // Issues
   getIssue(teamKey: string, number: number): Promise<TrackerIssue | null>;
@@ -141,6 +147,7 @@ export interface TrackerBackend {
   // Documents
   getDocument(documentId: string): Promise<TrackerDocument | null>;
   listDocuments(): Promise<TrackerDocumentSummary[]>;
+  createDocument(input: CreateDocumentInput): Promise<{ id: string; url: string }>;
   updateDocument(documentId: string, content: string): Promise<void>;
 }
 
@@ -437,6 +444,24 @@ server.tool(
       return ok({ ok: true });
     } catch (e) {
       return errFromCatch('tracker_create_issue_relation', e);
+    }
+  }
+);
+
+server.tool(
+  'tracker_create_document',
+  'Create a new document. Returns the document ID and URL.',
+  {
+    title: z.string().describe('Document title'),
+    content: z.string().describe('Document content in markdown'),
+    project_id: z.string().optional().describe('Project UUID to associate with (use tracker_get_projects to find)'),
+  },
+  async ({ title, content, project_id }) => {
+    try {
+      const result = await backend.createDocument({ title, content, projectId: project_id });
+      return ok({ ok: true, ...result });
+    } catch (e) {
+      return errFromCatch('tracker_create_document', e);
     }
   }
 );

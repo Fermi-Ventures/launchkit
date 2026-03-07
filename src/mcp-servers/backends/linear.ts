@@ -18,6 +18,7 @@ import type {
   TrackerDocumentSummary,
   CreateIssueInput,
   UpdateIssueInput,
+  CreateDocumentInput,
   EnsureTeamWorkflowResult,
 } from '../tracker.js';
 
@@ -189,6 +190,27 @@ export function createLinearBackend(): TrackerBackend {
 
     async listDocuments(): Promise<TrackerDocumentSummary[]> {
       return linear.listDocs();
+    },
+
+    async createDocument(input: CreateDocumentInput): Promise<{ id: string; url: string }> {
+      const data = await linear.gql(
+        `mutation($input: DocumentCreateInput!) {
+          documentCreate(input: $input) {
+            success
+            document { id url }
+          }
+        }`,
+        {
+          input: {
+            title: input.title,
+            content: input.content,
+            ...(input.projectId && { projectId: input.projectId }),
+          },
+        }
+      );
+      const result = data['documentCreate'] as { success: boolean; document: { id: string; url: string } };
+      if (!result.success) throw new Error('Failed to create document');
+      return { id: result.document.id, url: result.document.url };
     },
 
     async updateDocument(documentId: string, content: string): Promise<void> {
