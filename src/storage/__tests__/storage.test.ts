@@ -3,7 +3,7 @@
  *
  * Tests the storage factory, providers, and utility functions.
  * LocalFSProvider is tested with real filesystem operations.
- * VercelBlobProvider is tested with mocked @vercel/blob.
+ * VercelBlobProvider.getUrl() is tested; upload() requires real credentials.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -192,6 +192,12 @@ describe('LocalFSProvider', () => {
 
     it('does not throw when deleting non-existent file', async () => {
       await expect(storage.delete('local:nonexistent.txt')).resolves.toBeUndefined();
+    });
+
+    it('rejects path traversal attempts on delete', async () => {
+      await expect(
+        storage.delete('local:../../../etc/passwd')
+      ).rejects.toThrow('path traversal detected');
     });
   });
 });

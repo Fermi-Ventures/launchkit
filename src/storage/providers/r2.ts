@@ -37,23 +37,16 @@ export class R2Provider implements StorageService {
   async upload(_file: Buffer | Blob, _options: UploadOptions): Promise<StoredBlob> {
     throw new Error(
       'R2Provider.upload() is not implemented. ' +
-        'See LKT-48 for implementation tracking. ' +
         'Use STORAGE_PROVIDER=vercel or STORAGE_PROVIDER=local instead.'
     );
   }
 
   getUrl(_blobId: string, _options?: GetUrlOptions): string {
-    throw new Error(
-      'R2Provider.getUrl() is not implemented. ' +
-        'See LKT-48 for implementation tracking.'
-    );
+    throw new Error('R2Provider.getUrl() is not implemented.');
   }
 
   async delete(_blobId: string): Promise<void> {
-    throw new Error(
-      'R2Provider.delete() is not implemented. ' +
-        'See LKT-48 for implementation tracking.'
-    );
+    throw new Error('R2Provider.delete() is not implemented.');
   }
 }
 
