@@ -1,5 +1,5 @@
 {
-  "name": "@launchkit/rbac",
+  "name": "@fermi-ventures/launchkit-rbac",
   "version": "0.0.1",
   "description": "@launchkit/rbac package (stub)",
   "type": "module",

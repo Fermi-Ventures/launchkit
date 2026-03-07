@@ -1,5 +1,5 @@
 {
-  "name": "@launchkit/core",
+  "name": "@fermi-ventures/launchkit-core",
   "version": "0.0.1",
   "description": "@launchkit/core package (stub)",
   "type": "module",

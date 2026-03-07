@@ -4,13 +4,13 @@ Provider-agnostic infrastructure packages for rapid SaaS development.
 
 ## Packages
 
-- **[@launchkit/storage](./packages/storage)** — Blob storage abstraction (Vercel Blob, R2, local filesystem)
-- **[@launchkit/core](./packages/core)** — Core utilities and types
-- **[@launchkit/ui](./packages/ui)** — Shared React UI components
-- **[@launchkit/email](./packages/email)** — Email service abstraction
-- **[@launchkit/ai](./packages/ai)** — AI/LLM utilities
-- **[@launchkit/mcp](./packages/mcp)** — MCP server scaffolding
-- **[@launchkit/rbac](./packages/rbac)** — Role-based access control
+- **[@fermi-ventures/launchkit-storage](./packages/storage)** — Blob storage abstraction (Vercel Blob, R2, local filesystem)
+- **[@fermi-ventures/launchkit-core](./packages/core)** — Core utilities and types
+- **[@fermi-ventures/launchkit-ui](./packages/ui)** — Shared React UI components
+- **[@fermi-ventures/launchkit-email](./packages/email)** — Email service abstraction
+- **[@fermi-ventures/launchkit-ai](./packages/ai)** — AI/LLM utilities
+- **[@fermi-ventures/launchkit-mcp](./packages/mcp)** — MCP server scaffolding
+- **[@fermi-ventures/launchkit-rbac](./packages/rbac)** — Role-based access control
 
 ## Installation
 
@@ -19,7 +19,7 @@ LaunchKit packages are published to GitHub Packages. To install, configure npm t
 ### 1. Create or update `.npmrc` in your project root:
 
 ```
-@launchkit:registry=https://npm.pkg.github.com
+@fermi-ventures:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 
@@ -41,7 +41,7 @@ Or add it to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.)
 ### 4. Install packages
 
 ```bash
-npm install @launchkit/storage
+npm install @fermi-ventures/launchkit-storage
 ```
 
 ## Development

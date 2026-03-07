@@ -1,5 +1,5 @@
 {
-  "name": "@launchkit/email",
+  "name": "@fermi-ventures/launchkit-email",
   "version": "0.0.1",
   "description": "@launchkit/email package (stub)",
   "type": "module",

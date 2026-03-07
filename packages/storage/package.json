@@ -1,5 +1,5 @@
 {
-  "name": "@launchkit/storage",
+  "name": "@fermi-ventures/launchkit-storage",
   "version": "0.1.0",
   "description": "Provider-agnostic blob storage abstraction",
   "type": "module",
