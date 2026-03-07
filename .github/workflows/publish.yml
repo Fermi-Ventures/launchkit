@@ -1,0 +1,58 @@
+name: Publish Packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/**'
+      - '.github/workflows/publish.yml'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@launchkit'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build packages
+        run: npm run build
+
+      - name: Publish changed packages
+        run: |
+          # Only publish packages that have changed
+          for package_dir in packages/*; do
+            if [ -d "$package_dir" ] && [ -f "$package_dir/package.json" ]; then
+              cd "$package_dir"
+
+              # Extract package name and version
+              PACKAGE_NAME=$(node -p "require('./package.json').name")
+              PACKAGE_VERSION=$(node -p "require('./package.json').version")
+
+              # Check if this version is already published
+              if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null; then
+                echo "⏭️  $PACKAGE_NAME@$PACKAGE_VERSION already published, skipping"
+              else
+                echo "📦 Publishing $PACKAGE_NAME@$PACKAGE_VERSION"
+                npm publish
+              fi
+
+              cd ../..
+            fi
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
