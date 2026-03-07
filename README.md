@@ -4,7 +4,12 @@ Provider-agnostic infrastructure packages for rapid SaaS development.
 
 ## Packages
 
+### Available
+
 - **[@fermi-ventures/launchkit-storage](./packages/storage)** — Blob storage abstraction (Vercel Blob, R2, local filesystem)
+
+### Planned
+
 - **[@fermi-ventures/launchkit-core](./packages/core)** — Core utilities and types
 - **[@fermi-ventures/launchkit-ui](./packages/ui)** — Shared React UI components
 - **[@fermi-ventures/launchkit-email](./packages/email)** — Email service abstraction
@@ -86,6 +91,7 @@ Packages are automatically published to GitHub Packages when changes are merged 
    - **MINOR** (0.2.0): New features, backward compatible
    - **MAJOR** (1.0.0): Breaking changes
 3. The CI workflow will only publish if the version doesn't already exist in the registry
+4. **Stub packages** (version `0.0.x`) are not published — these represent planned features
 
 ### Future: Changesets
 
