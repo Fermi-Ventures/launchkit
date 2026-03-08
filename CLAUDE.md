@@ -102,3 +102,90 @@ Consuming projects configure the tracker MCP server:
   }
 }
 ```
+
+## Definition of Done for LaunchKit Packages
+
+A package is NOT complete when it builds. It is complete when it's **published and consumable**.
+
+### 1. Code Quality
+- [ ] `npm run build` passes with no TypeScript errors
+- [ ] `npm run test` passes (all tests)
+- [ ] No `any` types (use specific types or `unknown`)
+- [ ] Package builds successfully in Turborepo context
+
+### 2. Tests Written
+- [ ] Core functions have unit tests
+- [ ] Integration tests for complex interactions
+- [ ] Tests cover edge cases (null/undefined, empty inputs, errors)
+- [ ] Assertions verify specific values — no `expect.anything()` for critical values
+- [ ] All tests use Vitest (NOT Jest)
+
+### 3. Documentation
+- [ ] README.md with installation and usage examples
+- [ ] JSDoc comments for all public APIs
+- [ ] Module header comments explaining purpose and patterns
+- [ ] Examples show real-world usage patterns
+
+### 4. Package Configuration
+- [ ] `package.json` has correct name (`@fermi-ventures/launchkit-*`)
+- [ ] Version number is correct (semantic versioning)
+- [ ] `exports` field configured for subpath imports (if applicable)
+- [ ] Dependencies vs devDependencies correctly categorized
+- [ ] `publishConfig.registry` points to GitHub Packages
+- [ ] No private/internal dependencies exposed
+
+### 5. Security & Dependencies
+- [ ] No hardcoded secrets or credentials
+- [ ] `npm audit --production` shows zero vulnerabilities
+- [ ] Peer dependencies are documented
+- [ ] External service integrations have proper error handling
+
+### 6. **Publishing (CRITICAL)**
+- [ ] Package successfully published to GitHub Packages registry
+- [ ] Published version is consumable via `npm install @fermi-ventures/launchkit-<name>`
+- [ ] Package appears in GitHub Packages UI
+- [ ] **A package is NOT done until it's published and installable**
+
+### 7. Migration Path (for extraction tickets)
+- [ ] Source code identified and extracted
+- [ ] Migration ticket created for source repo (e.g., END-XXX, VST-XXX)
+- [ ] Migration ticket documents what needs to change in consuming code
+
+### 8. Self-Review
+- [ ] Does every exported function have tests?
+- [ ] Are there any breaking changes from extracted source?
+- [ ] Did I verify the package builds in isolation?
+- [ ] Did I test importing from the published package?
+
+### 9. Cleanup
+- [ ] No debug artifacts (console.log, commented code)
+- [ ] No TODO comments without Linear ticket references
+- [ ] Unused imports removed
+- [ ] Build artifacts (`dist/`) not committed to git
+
+### 10. Linear Ticket
+- [ ] Ticket moved to "Done" ONLY after package is published
+- [ ] If blocked on publishing, ticket moved to "Blocked" with clear unblock instructions
+- [ ] Comment on ticket with published version number and npm install command
+
+## Common Publishing Issues
+
+### GitHub Authentication Required
+
+If `npm publish` fails with `ENEEDAUTH`:
+
+```bash
+npm login --scope=@fermi-ventures --registry=https://npm.pkg.github.com
+# Enter GitHub Personal Access Token with write:packages permission
+npm publish
+```
+
+### Package Not Found After Publishing
+
+Check:
+1. Package name matches `@fermi-ventures/launchkit-*` scope
+2. `.npmrc` in consuming project has registry configuration:
+   ```
+   @fermi-ventures:registry=https://npm.pkg.github.com
+   ```
+3. Consuming project has GitHub PAT with `read:packages` permission
