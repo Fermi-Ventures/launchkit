@@ -218,6 +218,22 @@ When reviewing code changes (or when an architect agent reviews your ticket), th
 
 ### GitHub Authentication Required
 
+**IMPORTANT:** GitHub Packages requires a **classic personal access token** (starts with `ghp_`), NOT a fine-grained token (starts with `github_pat_`). Fine-grained tokens cannot access GitHub Packages due to a GitHub API limitation.
+
+**Required Token Scopes:**
+- `repo` (full control of private repositories)
+- `write:packages` (upload packages to GitHub Package Registry)
+- `read:packages` (download packages from GitHub Package Registry)
+- `read:org` (read org and team membership)
+
+**Token Location:**
+The classic token is stored in `~/.npmrc`:
+```
+//npm.pkg.github.com/:_authToken=ghp_...
+```
+
+**If token scopes change:** You must regenerate the token in GitHub UI for the new scopes to take effect. The token string will change.
+
 If `npm publish` fails with `ENEEDAUTH`:
 
 ```bash
