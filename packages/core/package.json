@@ -1,7 +1,7 @@
 {
   "name": "@fermi-ventures/launchkit-core",
-  "version": "0.0.1",
-  "description": "@launchkit/core package (stub)",
+  "version": "0.1.0",
+  "description": "Core types, utilities, and patterns for LaunchKit applications",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,6 +9,26 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js"
+    },
+    "./rbac": {
+      "types": "./dist/rbac/index.d.ts",
+      "import": "./dist/rbac/index.js"
+    },
+    "./urls": {
+      "types": "./dist/urls/index.d.ts",
+      "import": "./dist/urls/index.js"
+    },
+    "./scoring": {
+      "types": "./dist/scoring/index.d.ts",
+      "import": "./dist/scoring/index.js"
     }
   },
   "scripts": {
@@ -16,6 +36,18 @@
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.6.0"
+  },
+  "peerDependencies": {
+    "next-auth": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "next-auth": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -32,5 +64,13 @@
     "url": "https://github.com/fermi-ventures/launchkit.git",
     "directory": "packages/core"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [
+    "launchkit",
+    "core",
+    "types",
+    "utilities",
+    "rbac",
+    "nextjs"
+  ]
 }
