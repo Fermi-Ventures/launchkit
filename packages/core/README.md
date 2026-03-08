@@ -69,7 +69,48 @@ if (hasPermission(userPermissions, 'edit_content')) {
 }
 ```
 
-See full documentation in [docs](./docs) or [examples](./examples).
+### Signed URLs
+
+```typescript
+import { generateSignedDownloadUrl, validateSignedUrl } from '@fermi-ventures/launchkit-core/utils';
+
+// Generate time-limited download URL (1 hour default)
+const url = generateSignedDownloadUrl('file-123', '/api/files/download');
+
+// Validate signature
+const { valid, reason } = validateSignedUrl(resourceId, expires, token);
+if (!valid) {
+  throw new Error(reason);
+}
+```
+
+### URL Builders
+
+```typescript
+import { tenantUrl, buildOgImageUrl } from '@fermi-ventures/launchkit-core/urls';
+
+// Build tenant-scoped URLs
+const settingsUrl = tenantUrl('acme-corp', '/settings');
+// Returns: /acme-corp/settings
+
+// Build OG image URL
+const ogUrl = buildOgImageUrl(host, 'acme-corp', true);
+```
+
+### Weighted Scoring
+
+```typescript
+import { calculateWeightedScore, categorizeScore } from '@fermi-ventures/launchkit-core/scoring';
+
+const scores = { quality: 4, speed: 5, cost: 3 };
+const weights = { quality: 2, speed: 1, cost: 1 };
+
+const totalScore = calculateWeightedScore(scores, weights);
+// Returns: (4*2) + (5*1) + (3*1) = 16
+
+const category = categorizeScore(totalScore, [10, 20, 30]);
+// Returns: 1 (between thresholds 10 and 20)
+```
 
 ## Extracted From
 

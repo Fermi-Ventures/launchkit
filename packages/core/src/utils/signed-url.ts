@@ -22,8 +22,15 @@
  */
 import { createHmac } from "crypto";
 
-const SIGNING_KEY = process.env.NEXTAUTH_SECRET || "";
 const DEFAULT_TTL_SECONDS = 3600; // 1 hour
+
+function getSigningKey(): string {
+  const key = process.env.NEXTAUTH_SECRET;
+  if (!key) {
+    throw new Error("NEXTAUTH_SECRET environment variable is required");
+  }
+  return key;
+}
 
 /**
  * Generate a signed download path with expiry.
@@ -62,8 +69,33 @@ export function validateSignedUrl(
 }
 
 function sign(resourceId: string, expires: number): string {
-  return createHmac("sha256", SIGNING_KEY)
+  const signingKey = getSigningKey();
+  return createHmac("sha256", signingKey)
     .update(`${resourceId}:${expires}`)
     .digest("hex")
     .slice(0, 32); // 128-bit truncation — sufficient for URL signing
+}
+
+/**
+ * Extract expires and token parameters from a signed URL.
+ */
+export function extractSignedUrlParams(url: string): {
+  expires: number | null;
+  token: string | null;
+} {
+  const queryStart = url.indexOf("?");
+  if (queryStart === -1) {
+    return { expires: null, token: null };
+  }
+
+  const searchParams = new URLSearchParams(url.slice(queryStart + 1));
+  const expiresStr = searchParams.get("expires");
+  const token = searchParams.get("token");
+
+  const expires = expiresStr ? parseInt(expiresStr, 10) : null;
+
+  return {
+    expires: expires && !isNaN(expires) ? expires : null,
+    token,
+  };
 }

@@ -18,10 +18,11 @@
 /**
  * Build a tenant-scoped URL path.
  * @param slug - Tenant slug
- * @param path - Path within tenant (with leading slash)
+ * @param path - Path within tenant (with or without leading slash)
  */
 export function tenantUrl(slug: string, path: string = ""): string {
-  return `/${slug}${path}`;
+  const normalizedPath = path && !path.startsWith("/") ? `/${path}` : path;
+  return `/${slug}${normalizedPath}`;
 }
 
 /**
@@ -29,7 +30,7 @@ export function tenantUrl(slug: string, path: string = ""): string {
  * @param slug - Tenant slug
  * @param resourceType - Resource type (e.g., 'projects', 'ventures')
  * @param resourceId - Resource ID
- * @param subpath - Optional subpath (with leading slash)
+ * @param subpath - Optional subpath (with or without leading slash)
  */
 export function tenantResourceUrl(
   slug: string,
@@ -37,7 +38,8 @@ export function tenantResourceUrl(
   resourceId: string,
   subpath: string = ""
 ): string {
-  return `/${slug}/${resourceType}/${resourceId}${subpath}`;
+  const normalizedSubpath = subpath && !subpath.startsWith("/") ? `/${subpath}` : subpath;
+  return `/${slug}/${resourceType}/${resourceId}${normalizedSubpath}`;
 }
 
 /**
