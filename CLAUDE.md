@@ -227,12 +227,17 @@ When reviewing code changes (or when an architect agent reviews your ticket), th
 - `read:org` (read org and team membership)
 
 **Token Location:**
-The classic token is stored in `~/.npmrc`:
+The classic token is configured in **this repository's `.npmrc`** file (gitignored):
 ```
+@fermi-ventures:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=ghp_...
 ```
 
-**If token scopes change:** You must regenerate the token in GitHub UI for the new scopes to take effect. The token string will change.
+This project-specific `.npmrc` takes precedence over `~/.npmrc`, ensuring the correct token is always used for package operations in this repo.
+
+**Important:** Do NOT use `gh auth token` to retrieve the token - it returns the fine-grained token, which cannot access GitHub Packages. The classic token is in `.npmrc`.
+
+**If token scopes change:** You must regenerate the token in GitHub UI for the new scopes to take effect. The token string will change, and `.npmrc` must be updated.
 
 If `npm publish` fails with `ENEEDAUTH`:
 

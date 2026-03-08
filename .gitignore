@@ -6,3 +6,4 @@ dist/
 
 # Turborepo
 .turbo/
+.npmrc
